@@ -1,0 +1,37 @@
+ 
+
+.row-fluid .span11{
+	width: 84.45299145299145%;
+	margin-left:.564102564102564%;
+}
+	  
+.self_container-fluid{
+	padding-top:50px;
+}
+.myicon-ogc{ background-image: url("../../assets/img/ogc.png"); } 
+
+.myicon-i_about{ background-image: url("../../img/tool/i_about.png"); }
+.myicon-i_draw{ background-image: url("../../img/tool/i_draw.png"); }
+.myicon-i_polygon{ background-image: url("../../img/tool/i_polygon.png"); }
+.myicon-length{ background-image: url("../../img/tool/length.png"); } 
+.myicon-area { background-image: url("../../img/tool/area.png"); } 
+.myicon-all { background-image: url("../../img/tool/all.png"); } 
+.myicon-max { background-image: url("../../img/tool/max.png"); } 
+.myicon-min { background-image: url("../../img/tool/min.png"); } 
+.myicon-pan { background-image: url("../../img/tool/pan.png"); } 
+.myicon-clear{ background-image: url("../../img/tool/clear.png"); } 
+.myicon-bit{ background-image: url("../../img/tool/bit.png"); } 
+[class^="myicon-"], [class*=" myicon-"] {
+	
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin-top: 1px;
+	line-height: 16px;
+	vertical-align: text-top;
+	background-position: 0 0;
+	background-repeat: no-repeat;
+}
+
+
+		

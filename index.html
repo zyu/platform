@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Bitgis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+ 
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+    <link href="plugs/message/build/css/messenger.css" rel="stylesheet">
+    <link href="plugs/message//build/css/messenger-theme-future.css" rel="stylesheet">
+    <style type="text/css">
+     
+      /* Sticky footer styles
+      -------------------------------------------------- */
+
+      html,
+      body {
+        height: 100%;  
+        /* The html and body elements cannot have any padding or margin. */
+      } 
+    </style>
+	
+	
+	
+    <link href="assets/css/bootstrap-responsive.css" rel="stylesheet">
+	  <style>
+	     /* Lastly, apply responsive CSS fixes as necessary */
+      @media (max-width: 1440px) {
+        .container { 
+		  width:100%;
+        }
+      }
+	
+	.menu{ 
+		position:absolute;
+		margin: 0 auto;
+		width:300px;
+		height:40px;
+		z-index:750;
+	} 
+	.ui-widget-shadow { 
+	  margin: -8px 0 0 -8px; 
+	  padding: 8px; 
+	  background: #aaaaaa url(images/ui-bg_flat_0_aaaaaa_40x100.png) 50% 50% repeat-x; 
+	  opacity: .30;filter:Alpha(Opacity=30); 
+	  -moz-border-radius: 8px; 
+	  -khtml-border-radius: 8px; 
+	  -webkit-border-radius: 8px; 
+	  border-radius: 8px; 
+	} 
+    </style>
+	<link href="assets/css/self.css" rel="stylesheet">
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="assets/js/html5shiv.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="assets/ico/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="assets/ico/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="assets/ico/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="favicon.png">
+	<!-- <script language="javascript" src="http://webapi.amap.com/maps?v=1.2&key=70ea249de12b91e8694d09a853d7772c"></script> -->
+	<script src="assets/js/jquery.js"></script>	
+	<script src="jqueryui/jquery-1.9.1.js"></script>
+	<script src="jqueryui/ui/jquery.ui.core.js"></script>
+	<script src="jqueryui/ui/jquery.ui.widget.js"></script>
+	<script src="jqueryui/ui/jquery.ui.mouse.js"></script>
+	<script src="jqueryui/ui/jquery.ui.draggable.js"></script>	
+	<script src="lib/OpenLayers.js"></script>
+	<script language="javascript">
+		OpenLayers.ProxyHost= "proxy.php?url=";
+		var map,type,mousetool;
+		
+		var untiled,vectors ;
+		var lon ='113.66058',lat ='34.75340',zoom = '12',format = 'image/png';
+		var controls;
+		$(document).ready(function () { 
+		
+			$('#agmap').css('width','100%' );
+			$('#agmap').css('height',$('body').height() );
+			$('#agmap').css('background','#ccc' );
+			$('.menu').css('left',($('body').width()-310)/2);
+			$("a[tabindex='-1']").bind('click',function(e){
+				$(this).parents('.input-prepend .open').removeClass('open')
+				$("button[data-fun='optionbtn']").html($(this).html()); 
+				 
+			});
+			mapInit(); 
+		});
+		function mapInit(){ 
+		  var options = {
+                            units: "degrees", 
+                            displayProjection: new OpenLayers.Projection("EPSG:4326"),
+							 maxExtent: new OpenLayers.Bounds(113.30070896781166,34.502512154791155,114.16587848855096,34.978634993535962),
+                            controls: [new OpenLayers.Control.Navigation(),  
+                                       new OpenLayers.Control.PanZoomBar(), 
+                                       new OpenLayers.Control.MousePosition()  ]
+                             } ;
+			map = new OpenLayers.Map('agmap',options);//http://192.168.0.22:9000/36/wmts
+			var wms = new OpenLayers.Layer.WMS( "矢量","http://192.168.0.22:9000/31/wms", {layers: 'basic'},{'buffer':1} ); 
+			// setup single tiled layer
+             /*   untiled = new OpenLayers.Layer.WMS(
+                    "zyfc:zzplnpt - Untiled", "http://zyfc:8080/geoserver/zyfc/wms",
+                    {
+                        LAYERS: 'zyfc:zzplnpt',
+                        STYLES: '',
+						transparent: "true",
+                        format: format
+                    },
+                    {
+                       singleTile: true,  
+                       isBaseLayer: false,
+                       yx : {'EPSG:4490' : true}
+                    } 
+                ); */
+
+			 var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
+                renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
+				
+			vectors = new OpenLayers.Layer.Vector("Vector Layer", {
+                    renderers: renderer
+					
+                });
+			 
+			map.addLayers([wms,vectors]);
+			//map.zoomToMaxExtent();
+			map.setCenter(new OpenLayers.LonLat(lon, lat), zoom);
+			
+			map.addControl(new OpenLayers.Control.LayerSwitcher());
+			map.addControl(new OpenLayers.Control.Permalink());  
+			map.addControl(new OpenLayers.Control.OverviewMap());
+			map.addControl(new OpenLayers.Control.KeyboardDefaults());
+			initTool(options);
+			
+			var control = new OpenLayers.Control.GetFeature({
+                protocol: OpenLayers.Protocol.WFS.fromWMSLayer(wms),
+                box: true,
+                hover: true,
+                multipleKey: "shiftKey",
+                toggleKey: "ctrlKey"
+            });
+            control.events.register("featureselected", this, function(e) {
+                select.addFeatures([e.feature]);
+            });
+            control.events.register("featureunselected", this, function(e) {
+                select.removeFeatures([e.feature]);
+            });
+            control.events.register("hoverfeature", this, function(e) {
+                hover.addFeatures([e.feature]);
+            });
+            control.events.register("outfeature", this, function(e) {
+                hover.removeFeatures([e.feature]);
+            });
+            map.addControl(control);
+            //control.activate();
+			
+			//$("#modal").draggable();
+			
+			$("form[name='topsearch']").submit(function(){
+				
+				$("#modal").modal({backdrop:false});
+				
+				 return false;
+			});
+		}  
+			
+		function initTool(options){
+		
+			controls = {
+                    i_about: new OpenLayers.Control.DrawFeature(vectors,
+                                OpenLayers.Handler.Point),
+                    i_draw: new OpenLayers.Control.DrawFeature(vectors,
+                                OpenLayers.Handler.Path),
+                    i_polygon: new OpenLayers.Control.DrawFeature(vectors,
+                                OpenLayers.Handler.Polygon),
+                    drag: new OpenLayers.Control.DragFeature(vectors),
+					regular: new OpenLayers.Control.DrawFeature(vectors,
+                            OpenLayers.Handler.RegularPolygon,
+                            {handlerOptions: {sides: 4}}),
+					length: new OpenLayers.Control.Measure(OpenLayers.Handler.Path, options),
+                    area: new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, options) 
+                };
+				 
+			
+                for(var key in controls) {
+                    if(key == "length" || key == "area") {
+                            measureControl = controls[key];
+                            measureControl.events.on({
+                                "measure": handleMeasurements,
+                                "measurepartial": handleMeasurements
+                            });
+                            map.addControl(measureControl);            
+                    } else {
+                        map.addControl(controls[key]);            
+                    }
+                }
+				
+				
+			$("i[class|='myicon']").parent().bind('click',function(){
+				toggleControl(this);
+			});
+		}
+		 function calcVincenty(geometry) { 
+			var dist = 0;
+			for (var i = 1; i < geometry.components.length; i++) {
+				var first = geometry.components[i-1];
+				var second = geometry.components[i];
+				dist += OpenLayers.Util.distVincenty(
+					{lon: first.x, lat: first.y},
+					{lon: second.x, lat: second.y}
+				);
+			}
+			return dist;
+            }
+		function handleMeasurements(event){
+			var geometry = event.geometry;
+			var units = event.units;
+			var order = event.order;
+			var measure = event.measure;
+			var out = "";
+			if(measure != 0){
+                if(order == 1) {
+                    out += "距离: " + measure.toFixed(3) + " " + units;
+                    if (map.getProjection() == "EPSG:4326") {
+                        out += "<br /> 缓冲: " + 
+                            calcVincenty(geometry).toFixed(3) + " km"; 
+                    }
+                } else {
+                    out += "面积: " + measure.toFixed(3) + " " + units + "<sup>2</" + "sup>";
+                }
+                $.globalMessenger().post(out);
+				}
+		}
+		function toggleControl(element) {
+				element = $(element).html().split('"')[1].split('-')[1];
+                for(key in controls) {
+                    var control = controls[key];
+                    if(element == key) {
+                        control.activate();
+                    } else {
+                        control.deactivate();
+                    }
+                }
+            }
+			
+			//使用BBOX查询
+
+/*    new OpenLayers.Request.GET( {
+        url : "http://search.tianditu.com/wfs?request=GetFeature",
+        params: { 
+            typeName: "DOMAIN_POI_NEW", 
+            BBOX: "105.99,29.99,106,30"  //map.getExtent().toBBOX() 
+        }, 
+        callback : handler
+    }); 
+	
+	
+	
+	baseLayer = new OpenLayers.Layer.WFS("WFS Layer",   
+                "http://localhost:8880/gnis/wfs?GDX=gms.xml&VERSION=1.1.0&SRSNAME=EPSG:4326",
+                {typename: "GMS_METRO_BELT_LYR", maxfeatures: 1000},
+                {
+                        typename: "GMS_METRO_BELT_LYR",
+                        layerName: "GMS_METRO_BELT_LYR",
+                        isBaseLayer: true,
+                        geometry_column: "SHAPE",
+                        extractAttributes: true,
+                        eventListeners: {
+                                "featureselected": featureSelected,
+                                "featuremodified": featureModified
+                        }
+                }
+	*/
+	</script>										   
+  </head>
+
+  <body> 
+		<div class="container">
+			 <div id="agmap"> 
+				<div class="menu">
+					  <div class="bs-docs-example">
+						<div id="navbar-example" class="navbar navbar-static">
+						  <div class="navbar-inner">
+							<div class="container" style="width: auto;"> 
+							  <ul class="nav" role="navigation">
+								<li class="dropdown">
+								  <a id="dsearch" href="#" role="button" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-search"></i>查询</a>
+								  <ul class="dropdown-menu" role="msearch" aria-labelledby="dsearch"> 
+									<li>
+										<form name='topsearch' style ='margin:0' class="form-search">
+										<div class="input-prepend input-append">
+										  <div class="input-prepend"> 
+										  <button class=" btn dropdown-toggle" data-toggle="dropdown" data-fun='optionbtn'>
+												  选项
+										  <span class="caret"></span>
+										  </button>
+												<ul class="dropdown-menu">
+												   <li><a tabindex="-1" href="#">当前范围</a></li>
+												   <li><a tabindex="-1" href="#">点查询</a></li>
+												   <li><a tabindex="-1" href="#">拉框查询</a></li>
+												   <li><a tabindex="-1" href="#">缓冲区查询</a></li> 
+												</ul> 
+											</div>
+											  <input class="span2" id="appendedPrependedDropdownButton" type="text"> 
+											 <div class="input-append"> 
+												<button class="btn">搜索</button>
+											</div>
+											</div>
+										</form>
+									</li>
+								  </ul>
+								</li>
+								<li class="dropdown">
+								  <a href="#" id="dlayer" role="button" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-list"></i>图层 </a>
+								  <ul class="dropdown-menu" role="menu" aria-labelledby="dlayer"> 
+									  <li class="dropdown-submenu">
+									  <a href="#"><i class=''></i>标准服务</a> 
+										<ul class="dropdown-menu">
+										 <li><a tabindex="-21" href="#">网络地图服务(wms)</a></li> 
+										 <li><a tabindex="-22" href="#">瓦片地图服务(wmts)</a></li> 
+										 <li><a tabindex="-23" href="#">数据服务(wfs)</a></li> 
+										</ul>
+									  </li>
+									  <li class="dropdown-submenu">
+										<a href="#"><i class=''></i>bitgis服务</a>
+										<ul class="dropdown-menu">
+										 <li><a tabindex="-24" href="#">网络地图服务(wms)</a></li> 
+										 <li><a tabindex="-25" href="#">瓦片地图服务(wmts)</a></li> 
+										 <li><a tabindex="-26" href="#">数据服务(wfs)</a></li> 
+										</ul>
+									  </li> 
+									  <li class="divider"></li>
+									  <li><a tabindex="-27" href="#">地名地址</a></li>
+								  </ul>
+								</li>
+								<li class="dropdown">
+								  <a href="#" id="dtool" role="button" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-wrench"></i>工具</a>
+								  <ul class="dropdown-menu" role="menu" aria-labelledby="dtool"> 
+									<li class="nav-header">地图标注</li>
+									<li><a href="#"><i class="myicon-i_about"></i>点标注</a></li>
+									<li><a href="#"><i class="myicon-i_draw"></i>线标注</a></li>
+									<li><a href="#"><i class="myicon-i_polygon"></i>面标注</a></li>
+									<li><a href="#"><i class="myicon-regular"></i>面标注</a></li> 
+									<li class="nav-header">地图导航</li>
+									<li><a href="#">公交导航</a></li>
+									<li><a href="#">驾车路线</a></li> 
+									<li class="divider"></li>
+									<li class="nav-header">地图工具</li>
+									<li><a href="#"><i class="myicon-length"></i>测距</a></li>
+									<li><a href="#"><i class="myicon-area"></i>测面</a></li>
+									<li><a href="javascript:map.zoomToMaxExtent()"><i class="myicon-all"></i>全图</a></li>
+									<li><a href="javascript:map.zoomOut()"><i class="myicon-max"></i>放大</a></li>
+									<li><a href="javascript:map.zoomIn()"><i class="myicon-min"></i>缩小</a></li>
+									<li><a href="javascript:map.pan()"><i class="myicon-pan"></i>漫游</a></li>
+									<li><a href="javascript:map.zoomIn()"><i class="myicon-clear"></i>清除</a></li>  
+								  </ul>
+								</li>
+								<li class="dropdown">
+								  <a href="#" id="dsocial" role="button" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-user"></i>社交 </a>
+								  <ul class="dropdown-menu" role="menu" aria-labelledby="dsocial">
+								  </ul>
+								</li>
+							  </ul>
+							 
+							</div>
+						  </div>
+						</div> <!-- /navbar-example -->
+					  </div>
+
+					</div> 
+				  
+				
+				<div id="modal"  class="modal hide">
+				  <div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h3>搜索结果</h3>
+				  </div>
+				  <div class="modal-body">
+					<ul class="media-list">
+					  <li class="media">
+						<a class="pull-left" href="#"><img class="media-object" data-src="holder.js/27x35" alt="64x64" style="width: 27px; height: 34px;" src="countbtn/icon_index_1_0.png">
+						</a>
+						<div class="media-body">
+						  <h4 class="media-heading">中国人寿保险股份有限公司济源支公司</h4>
+						  <p>河南省济源市沁园中路431号</p>
+						</div>
+					  </li>
+					  <li class="media">
+						<a class="pull-left" href="#"><img class="media-object" data-src="holder.js/27x35" alt="64x64" style="width: 27px; height: 34px;" src="countbtn/icon_index_2_0.png">
+						</a>
+						<div class="media-body">
+						  <h4 class="media-heading">中国人寿保险股份有限公司济源支公司</h4>
+						  <p>河南省济源市沁园中路431号</p>
+						</div>
+					  </li>
+					  <li class="media">
+						<a class="pull-left" href="#"><img class="media-object" data-src="holder.js/27x35" alt="64x64" style="width: 27px; height: 34px;" src="countbtn/icon_index_3_0.png">
+						</a>
+						<div class="media-body">
+						  <h4 class="media-heading">中国人寿保险股份有限公司济源支公司</h4>
+						  <p>河南省济源市沁园中路431号</p>
+						</div>
+					  </li>
+					  <li class="media">
+						<a class="pull-left" href="#"><img class="media-object" data-src="holder.js/27x35" alt="64x64" style="width: 27px; height: 34px;" src="countbtn/icon_index_4_0.png">
+						</a>
+						<div class="media-body">
+						  <h4 class="media-heading">中国人寿保险股份有限公司济源支公司</h4>
+						  <p>河南省济源市沁园中路431号</p>
+						</div>
+					  </li>
+					</ul>
+				  </div>
+				 <div class="pagination pagination-centered">
+				  <ul>
+					<li><a href="#">Prev</a></li>
+					<li><a href="#">1</a></li>
+					<li><a href="#">2</a></li>
+					<li><a href="#">3</a></li>
+					<li><a href="#">4</a></li>
+					<li><a href="#">5</a></li>
+					<li><a href="#">Next</a></li>
+				  </ul>
+				</div>
+				</div> 
+     </div><!--/row-->  
+	</div>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap-transition.js"></script>
+    <script src="assets/js/bootstrap-alert.js"></script>
+    <script src="assets/js/bootstrap-modal.js"></script>
+    <script src="assets/js/bootstrap-dropdown.js"></script>
+    <script src="assets/js/bootstrap-scrollspy.js"></script>
+    <script src="assets/js/bootstrap-tab.js"></script>
+    <script src="assets/js/bootstrap-tooltip.js"></script>
+    <script src="assets/js/bootstrap-popover.js"></script>
+    <script src="assets/js/bootstrap-button.js"></script>
+    <script src="assets/js/bootstrap-collapse.js"></script>
+    <script src="assets/js/bootstrap-carousel.js"></script>
+    <script src="assets/js/bootstrap-typeahead.js"></script>
+    <script src="plugs/message/build/js/messenger.js"></script> 
+  </body>
+</html>
