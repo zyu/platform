@@ -26,10 +26,13 @@
 							 
            agmap = new OpenLayers.Map('map',options);
 			var wms = new OpenLayers.Layer.WMS( "OpenLayers WMS",
-				"http://192.168.0.25:9000/wms", {layers: 'basic'},{singleTile: true,'buffer':1});
+				"http://192.168.0.22:9000/31/wms", {layers: 'basic'},{singleTile: true,'buffer':1});
 			agmap.addLayers([wms]);
 			agmap.zoomToMaxExtent();
 			 
+			 
+			
+
         });
     </script>
   </head>
