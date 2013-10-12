@@ -103,7 +103,7 @@
                                        new OpenLayers.Control.MousePosition()  ]
                              } ;
 			map = new OpenLayers.Map('agmap',options);//http://192.168.0.22:9000/36/wmts
-			var wms = new OpenLayers.Layer.WMS( "矢量","http://192.168.0.22:9000/31/wms", {layers: 'basic'},{single:'buffer':1} ); 
+			var wms = new OpenLayers.Layer.WMS( "矢量","http://192.168.0.22:9000/31/wms", {layers: 'basic'},{single:true,'buffer':1} ); 
 			// setup single tiled layer
              /*   untiled = new OpenLayers.Layer.WMS(
                     "zyfc:zzplnpt - Untiled", "http://zyfc:8080/geoserver/zyfc/wms",
